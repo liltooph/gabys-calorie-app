@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, Button, StyleSheet, ImageBackground } from "react-native";
+import { Text, View, TouchableOpacity, Button, StyleSheet, ImageBackground, Linking } from "react-native";
 import { CameraView, CameraType, useCameraPermissions, Camera } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library'
 import { useState, useEffect } from "react";
@@ -18,7 +18,14 @@ export default function App() {
   const [passwordText, setPasswordText] = useState('')
 
   const [signupButtonText, setSignupButtonText] = useState('Sign up')
+  const [loginButtonText, setLoginButtonText] = useState('Login')
 
+
+  // Replace with your actual Discord invite link
+ const discordHandlePress = () => {
+  const discordInviteLink = 'https://discord.gg/FJDZxpYm7D';
+  Linking.openURL(discordInviteLink).catch((err) => console.error('An error occurred', err));
+ }
 
   SplashScreen.preventAutoHideAsync();
   const [fontsLoaded] = useFonts({
@@ -65,6 +72,33 @@ export default function App() {
       console.error('Error:', error);
     }
   }
+  const sendLoginInfoToServer = async () => {
+    try {
+      console.log("Sending username login: " + usernameText)
+
+      console.log("Sending password login: " + passwordText)
+      
+      const response = await fetch('https://actual-cool-grubworm.ngrok-free.app/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': "skipepicly"
+        },
+        body: JSON.stringify({
+          username: usernameText,
+          password: passwordText,
+        })
+      })
+
+      const data = await response.json();
+
+      setLoginButtonText(data.message)
+
+      // Set the response from the server
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
 
   return (
     <ImageBackground source={require("../assets/images/account-background.jpg")} style={styles.imageBackground}>
@@ -99,10 +133,10 @@ export default function App() {
             placeholderTextColor={'#ffffff'}
             onChangeText={text => setPasswordText(text)}
           ></TextInput>
-          <TouchableOpacity style={styles.button} onPress={() => alert('Button Pressed!')}>
-            <Text style={styles.buttonText}>Login</Text>
+          <TouchableOpacity style={styles.button} onPress={sendLoginInfoToServer}>
+            <Text style={styles.buttonText}>{loginButtonText}</Text>
           </TouchableOpacity>
-          <Text style={{color: "#ffffff", textAlign: "center", fontFamily: "LondonBetween"}}>Please join our Discord server to talk to like minded people!</Text>
+          <Text style={{color: "#ffffff", textAlign: "center", fontFamily: "LondonBetween"}} onPress={discordHandlePress}>Please join our Discord server to talk to like minded people!</Text>
         </View>
       </View>
     </ImageBackground>
