@@ -19,13 +19,9 @@ export default function App() {
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [testNumber, setNumber] = useState(1);
   const [response, setResponse] = useState(null);
 
   const [llamaResponse, setLlamaResponse] = useState("")
-
-  const [result, setResult] = useState(null);
-
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -42,30 +38,9 @@ export default function App() {
     );
   }
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-    console.log("the public ip is 174.176.220.205")
-  }
-
-  /*
-  const formData = new FormData();
-    formData.append('file', {
-      uri: photo,
-      name: 'photo.jpg',  // You can dynamically set this
-      type: 'image/jpeg', // Ensure the type matches your file
-    });
-    */
-
-  const sendNumberToServer = async () => {
+  const sendPhotoToServer = async () => {
     try {
-      console.log("Sending number: " + testNumber)
-
-      const formData = new FormData();
-
-      formData.append("photo", photoData)
-
       console.log("Photo Location: " + photo)
-      console.log("Photo Data: " + photoData)
 
       const response = await fetch('https://actual-cool-grubworm.ngrok-free.app/upload', {
         method: 'POST',
@@ -73,14 +48,6 @@ export default function App() {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': "skipepicly"
         },
-        /*
-        body: JSON.stringify({
-          uri: photo,
-          name: 'photo.jpg', // You can provide a dynamic name or get it from the path
-          type: 'image/jpeg',
-        })
-          */
-        //body: formData
         body: JSON.stringify({
           image: photoData,
         })
@@ -93,7 +60,7 @@ export default function App() {
       const orderedData = predictions.map((item: { class: any; }) => item.class).join(", ")
       setLlamaResponse(data.ollama_response?.response || "No response provided by Ollama.");
 
-      console.log(data +"HHHHHHHHHH"+ orderedData)
+      console.log("data: " + data + " orderedData: " + orderedData)
 
       setResponse(orderedData); // Set the response from the server
     } catch (error) {
@@ -107,7 +74,6 @@ export default function App() {
       try {
         const data = await cameraRef.current.takePictureAsync({ base64: true });
         if (data?.uri != undefined) {
-          setNumber(Math.floor(Math.random() * 11))
           setPhoto(data.uri);
           if (data.base64 != undefined) {
             setPhotoData(data.base64)
@@ -148,7 +114,7 @@ export default function App() {
 
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => sendNumberToServer()}
+              onPress={sendPhotoToServer}
             >
               <Text style={styles.textStyle}>Info</Text>
             </TouchableOpacity>
@@ -170,6 +136,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: "#e0edf7",
   },
   scrollView: {
     height: 200, // Adjust height to control the visible area
@@ -204,6 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.0)', // Semi-transparent background
+    height: 100,
   },
   modalView: {
     margin: 20,
