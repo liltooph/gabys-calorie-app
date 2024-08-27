@@ -8,6 +8,7 @@ import { useCallback } from "react";
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { TextInput } from "react-native-gesture-handler";
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore
 
 export default function App() {
   const [usernameSignupText, setUsernameSignupText] = useState('')
@@ -91,6 +92,10 @@ export default function App() {
       })
 
       const data = await response.json();
+      
+      if (data.access_token){
+        await SecureStore.setItemAsync('access_token', data.access_token); // Store JWT securely
+      }
 
       setLoginButtonText(data.message)
 

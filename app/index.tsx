@@ -6,6 +6,7 @@ import 'react-native-gesture-handler';
 import { Drawer } from 'expo-router/drawer';
 import { NavigationRouteContext } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>('back');
@@ -18,6 +19,7 @@ export default function App() {
   const [photoData, setPhotoData] = useState("")
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalText, setModalText] = useState("Please log in to upload photos!")
 
   const [response, setResponse] = useState(null);
 
@@ -41,12 +43,14 @@ export default function App() {
   const sendPhotoToServer = async () => {
     try {
       console.log("Photo Location: " + photo)
+      const token = await SecureStore.getItemAsync('access_token')
 
       const response = await fetch('https://actual-cool-grubworm.ngrok-free.app/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': "skipepicly"
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': "skipepicly",
         },
         body: JSON.stringify({
           image: photoData,
@@ -54,6 +58,8 @@ export default function App() {
       });
 
       const data = await response.json();
+      
+      const credits = data.credits
 
       const predictions = Array.isArray(data.predictions) ? data.predictions : [];
 
@@ -61,6 +67,9 @@ export default function App() {
       setLlamaResponse(data.ollama_response?.response || "No response provided by Ollama.");
 
       console.log("data: " + data + " orderedData: " + orderedData)
+      console.log("credits: " + credits)
+
+      setModalText("Credits: " + credits)
 
       setResponse(orderedData); // Set the response from the server
     } catch (error) {
@@ -68,6 +77,31 @@ export default function App() {
     }
 
   };
+
+  const checkCredits = async () => {
+    try {
+        const token = await SecureStore.getItemAsync('access_token')
+
+        const response = await fetch('https://actual-cool-grubworm.ngrok-free.app/checkcredits', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': "skipepicly",
+            },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            setModalText("Credits: " + data.credits);
+        } else {
+            setModalText(data.error || 'Failed to fetch credits');
+        }
+      } catch(error){
+        console.log(error)
+      }
+}
 
   const takePhoto = async () => {
     if (cameraRef.current) {
@@ -80,6 +114,14 @@ export default function App() {
             console.log("photoData set!")
           } else {
             console.log("photoData not set something is wrong")
+          }
+          const isSecureToken = await SecureStore.getItemAsync("access_token")
+          console.log("secure token: " + isSecureToken)
+          if (isSecureToken){
+            console.log("Secure token found")
+            checkCredits()
+          } else {
+            console.log("Secure token NOT found")
           }
           setModalVisible(true)
         }
@@ -110,7 +152,7 @@ export default function App() {
             <Image source={{ uri: photo }} style={styles.imagePreview} />
             <Text>{response}</Text>
             <ScrollView style={styles.scrollView}><Text>{llamaResponse}</Text></ScrollView>
-            <Text style={styles.modalText}>Photo Taken!</Text>
+            <Text style={styles.modalText}>{modalText}</Text>
 
             <TouchableOpacity
               style={styles.closeButton}
